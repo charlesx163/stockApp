@@ -101,20 +101,20 @@ namespace StockPriceApplication.Controllers
 
                 var stockNetChanges = _stockNetChangeCalculator.Calculator(sd, ed, stocksDic);
                 var relativeReturns = _seRelativeReturnCalculator.Calculate(stockNetChanges, indexsDic);
-                var yValueDic = new Dictionary<string,decimal>();
+                var yValues = new List<decimal>();
                 foreach ( var relativeReturn in  relativeReturns) 
                 {
                     if (!xValues.Contains(relativeReturn.Key))
                     {
                         xValues.Add(relativeReturn.Key);
                     }
-                    yValueDic.Add(relativeReturn.Key,relativeReturn.Value.RelativeReturn);
+                    yValues.Add(relativeReturn.Value.RelativeReturn);
                 }
                 sp = new ExpandoObject();
                 sp.name = stockType;
                 sp.type = "line";
                 sp.Stack = "Total";
-                sp.data = GetYValues(yValueDic,xValues);//yValues.ToArray();
+                sp.data = yValues.ToArray();//yValues.ToArray();
                 charts.Add(sp);
 
             }
@@ -199,20 +199,6 @@ namespace StockPriceApplication.Controllers
                 list.Add(DateTime.Parse(startDate).AddDays(i).ToShortDateString());
             }
             return list;
-        }
-
-
-        private List<decimal> GetYValues(Dictionary<string,decimal> yValueDic,List<string> xValues)
-        {
-            foreach (var xValue in xValues)
-            {
-                if(!yValueDic.TryGetValue(xValue, out decimal value))
-                {
-                    yValueDic.Add(xValue, 0);
-                }
-            }
-            var sortedYValues= yValueDic.OrderBy(x => x.Key).ToDictionary(y=>y.Key,y=>y.Value);
-            return sortedYValues.Values.ToList();
         }
 
     }

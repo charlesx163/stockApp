@@ -108,6 +108,7 @@
                     $("#chart").show();
                     var series = JSON.parse(data.series.series);
                     var myChart = echarts.init(document.getElementById("main"));
+                    myChart.clear();
                     myChart.showLoading({
                         text: '疯狂计算中',
                         effect: 'whirling'
