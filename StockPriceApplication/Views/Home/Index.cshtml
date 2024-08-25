@@ -1,0 +1,175 @@
+﻿@model IEnumerable<Stock>
+@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="text-center">
+    <h1 class="display-4">股票相对收益查询页</h1>
+    <form id="uploadForm" method="post" enctype="multipart/form-data">
+        <div class="input-group mb-3">
+            <input type="file" class="form-control" id="fileInput" name="file" />
+            <input type="submit" value="Upload" id="uploadButton" class="btn btn-primary" />
+        </div>
+    </form>
+
+    <div id="conditionGroup" class="condition">
+        @* @using (Html.BeginForm("Search", "Home", FormMethod.Post)){} *@
+        <input class="Wdate" id="StartDate" name="sd" type="text" placeholder="起始日期" onclick="WdatePicker({el:this})" />
+        <input class="Wdate" id="EndDate" name="ed" type="text" placeholder="结束日期" onclick="WdatePicker({el:this})" />
+        @Html.DropDownList("StockDropDown", (IEnumerable<SelectListItem>)ViewBag.Stocks, new { multiple = "multiple" })
+        <input type="submit" id="returnSearch" value="Search" class="btn btn-primary" />
+    </div>
+    <div id="search"></div>
+</div>
+<!-- #region name -->
+
+<div id="chart" class="chart">
+    <!-- 为 ECharts 准备一个具备大小（宽高）的 DOM -->
+    <div id="main" style="width:100% ;height:650px;text-align:center"><span style="margin:0 auto;line-height:50">I'm Ready.</span></div>
+</div>
+
+<!-- #endregion -->
+
+<div>
+
+</div>
+
+<script src="~/lib/jquery/dist/jquery.js"></script>
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<Script type="text/javascript">
+    $(document).ready(function () {
+        $("#chart").hide();
+        $("#conditionGroup").hide();
+        var button = document.getElementById("uploadButton");
+        button.disabled = false;
+    });
+
+    function Query() {
+        var sd = $("#StartDate").val();
+        var ed = $("#EndDate").val();
+        var selectItem = $("#StockDropDown").val();
+        $.ajax({
+            url: "@Url.Action("Search", "Home")",
+            data: "sd=" + sd + "&ed=" + ed + "&stockTypeList=" + selectItem,
+            type: "Post",
+            dataType: 'html',
+            success: function (data) {
+                $("#search").show();
+                $("#search").html(data);
+                alert("success");
+            },
+            error: function () {
+                alert("Err")
+            }
+        });
+    };
+    $("#uploadForm").submit(function (e) {
+        e.preventDefault();
+        var formData = new FormData();
+        formData.append('file', $('#fileInput')[0].files[0]);
+
+        $.ajax({
+            url: '/Home/ImportExcel',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                alert(data);
+                $("#conditionGroup").show();
+                document.getElementById("uploadButton").disabled = true;
+            },
+            error: function (error) {
+                alert("上传失败")
+            }
+        });
+    });
+    $("#returnSearch").click(function () {
+        var sd = $("#StartDate").val();
+        var ed = $("#EndDate").val();
+        var selectItem = $("#StockDropDown").val();
+        var _list = [];
+        _list[0] = selectItem;
+        try {
+            $.ajax({
+                url: '/Home/GenerateEcharts',
+                data: "sd=" + sd + "&ed=" + ed + "&stockTypeList=" + _list,
+                type: "POST",
+                dataType: "json",
+                async: false,
+                success: function (data) {
+                    //没有数据时提示
+                    if (data.xAxis.data.length == 0) {
+                        alert("没有数据");
+                        $("#chart").hide();
+                        return;
+                    }
+                    $("#chart").show();
+                    var series = JSON.parse(data.series.series);
+                    var myChart = echarts.init(document.getElementById("main"));
+                    myChart.showLoading({
+                        text: '疯狂计算中',
+                        effect: 'whirling'
+                    });
+                    option = {
+                        title: {
+                            text: "股票收益图"
+                        },
+                        tooltip: {
+                            trigger: 'axis'
+                        },
+                        legend: {
+                            data: data.legend.data
+                        },
+                        grid: {
+                            left: '3%',
+                            right: '4%',
+                            bottom: '3%',
+                            containLabel: true
+                        },
+                        toolbox: {
+                            show: true,
+                            feature: {
+                                dataZoom: {
+                                    yAxisIndex: 'none'
+                                },
+                                dataView: { readOnly: false },
+                                magicType: { type: ['line', 'bar'] },
+                                restore: {},
+                                saveAsImage: {}
+                            }
+                        },
+                        
+                        xAxis: {
+                            name:"日期",
+                            type: 'category',
+                            boundaryGap: false,
+                            data: data.xAxis.data
+                        },
+                        yAxis: {
+                            name: "相对收益图",
+                            type: 'value',
+                            // splitNumber: 10,
+                            // axisLabel: {
+                            //     formatter: '{value} '
+                            // }
+                        },
+                        series: series
+                    };
+                    myChart.setOption(option);
+                    myChart.hideLoading();
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    alert(errorThrown, -1);
+                }
+            });
+        }
+        catch (ex) {
+            alert("请求失败，可能是您掉线了。请刷新页面后重试", 0);
+        }
+    });
+</Script>
+
+
+
