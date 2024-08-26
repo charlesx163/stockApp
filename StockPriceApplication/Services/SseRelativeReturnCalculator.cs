@@ -6,9 +6,7 @@ namespace StockPriceApplication.Services
 {
     public interface ISseRelativeReturnCalculator
     {
-        Dictionary<string, StockWithReturn> Calculate(
-            Dictionary<string, decimal> stockNetChangesDic,
-            Dictionary<string, decimal> indexDic);
+        Dictionary<string, StockWithReturn> Calculator(Dictionary<string, decimal> stockNetChangesDic,Dictionary<string, decimal> indexDic);
     }
     public class SseRelativeReturnCalculator : ISseRelativeReturnCalculator
     {
@@ -19,7 +17,7 @@ namespace StockPriceApplication.Services
             _calculator = calculator;
             _indexNetChangeCalculator = indexNetChangeCalculator;
         }
-        public Dictionary<string, StockWithReturn> Calculate(Dictionary<string, decimal> stockNetChanges,
+        public Dictionary<string, StockWithReturn> Calculator(Dictionary<string, decimal> stockNetChanges,
             Dictionary<string,decimal> indexDic)
         {
             var keys = stockNetChanges.Keys.ToList();

@@ -99,6 +99,10 @@
                 dataType: "json",
                 async: false,
                 success: function (data) {
+                    if (data.message != "") {
+                        alert(data.message);
+                        return;
+                    }
                     //没有数据时提示
                     if (data.xAxis.data.length == 0) {
                         alert("没有数据");
